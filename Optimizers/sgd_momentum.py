@@ -45,13 +45,13 @@ class SGDMomentum(Optimizer):
                 state = self.state[p]
 
                 # Initialise velocity buffer on first step
-                if "velocity" not in state:
+                if "vel" not in state:
                     state["vel"] = torch.zeros_like(p)
 
-                v = state["velocity"]
+                v = state["vel"]
 
                 # v = momentum * v + grad
-                v.mul_(mu).sub_(grad)
+                v.mul_(mu).add_(grad)
 
                 p.add_(v, alpha=-lr)
 
