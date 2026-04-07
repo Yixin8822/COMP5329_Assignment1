@@ -20,15 +20,7 @@ drive.mount('/content/drive')
 ```
 
 ```python
-import os
-REPO_URL     = "https://github.com/usyddeeplearning/Assignment1--2026.git"
-PROJECT_ROOT = "/content/drive/MyDrive/Assignment1--2026"
-
-if not os.path.exists(PROJECT_ROOT):
-    !git clone {REPO_URL} {PROJECT_ROOT}
-    print("Done.")
-else:
-    print("Already cloned — skipping.")
+import os REPO_URL = "https://github.com/Yixin8822/COMP5329_Assignment1.git" PROJECT_ROOT = "/content/drive/MyDrive/COMP5329_Assignment1" if not os.path.exists(PROJECT_ROOT): !git clone {REPO_URL} {PROJECT_ROOT} print("Done.") else: print("Already cloned — skipping.")
 ```
 
 Close this temporary notebook when done.
