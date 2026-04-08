@@ -20,7 +20,7 @@ from Optimizers import optimizers
 from Schedulers import schedulers
 from Tools import set_seed
 from EvaluateTools.eval_utils import run_eval
-from TrainTools.train_utils import train_single_epoch, save_checkpoint
+from TrainTools.train_utils import train_single_epoch, save_checkpoint, load_checkpoint
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -144,12 +144,23 @@ def train(
     scheduler = schedulers[scheduler_name](optimizer, args)
     loss_fn   = losses[loss_name]
 
-    best_f1  = 0.0
-    best_em  = 0.0
+    # ── Resume from checkpoint if one exists ─────────────────────────────────
+    start_step, best_f1, best_em, history = load_checkpoint(
+        save_dir, ckpt_name, model, optimizer, scheduler, DEVICE
+    )
     patience = 0
-    history  = []
 
-    for step0 in range(0, num_steps, checkpoint):
+    if start_step >= num_steps:
+        print(f"Checkpoint already at step {start_step} >= num_steps {num_steps}. Nothing to do.")
+        return {
+            "best_f1":   best_f1,
+            "best_em":   best_em,
+            "history":   history,
+            "ckpt_path": os.path.abspath(os.path.join(save_dir, ckpt_name)),
+            "config":    vars(args),
+        }
+
+    for step0 in range(start_step, num_steps, checkpoint):
         steps_this_block = min(checkpoint, num_steps - step0)
 
         train_loss = train_single_epoch(
@@ -204,6 +215,7 @@ def train(
         save_checkpoint(
             save_dir, ckpt_name, model, optimizer, scheduler,
             step0 + steps_this_block, best_f1, best_em, vars(args),
+            history=history,
         )
 
         with open(os.path.join(log_dir, "answers.json"), "w") as f:

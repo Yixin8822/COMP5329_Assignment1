@@ -41,8 +41,31 @@ def train_single_epoch(model, optimizer, scheduler, data_iter,
     return mean_loss
 
 
+def load_checkpoint(save_dir, ckpt_name, model, optimizer, scheduler, device):
+    """
+    Load model/optimizer/scheduler states from an existing checkpoint.
+    Returns (start_step, best_f1, best_em, history) so training can resume.
+    Returns (0, 0.0, 0.0, []) if no checkpoint exists.
+    """
+    ckpt_path = os.path.join(save_dir, ckpt_name)
+    if not os.path.exists(ckpt_path):
+        return 0, 0.0, 0.0, []
+
+    print(f"Resuming from checkpoint: {ckpt_path}")
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+    model.load_state_dict(ckpt["model_state"])
+    optimizer.load_state_dict(ckpt["optimizer_state"])
+    scheduler.load_state_dict(ckpt["scheduler_state"])
+    start_step = ckpt["step"]
+    best_f1    = ckpt.get("best_f1", 0.0)
+    best_em    = ckpt.get("best_em", 0.0)
+    history    = ckpt.get("history", [])
+    print(f"  Resumed at step {start_step}  best_f1={best_f1:.4f}  best_em={best_em:.4f}")
+    return start_step, best_f1, best_em, history
+
+
 def save_checkpoint(save_dir, ckpt_name, model, optimizer, scheduler,
-                    step, best_f1, best_em, config):
+                    step, best_f1, best_em, config, history=None):
     """Save model, optimizer, scheduler state to a checkpoint file."""
     os.makedirs(save_dir, exist_ok=True)
     payload = {
@@ -53,5 +76,6 @@ def save_checkpoint(save_dir, ckpt_name, model, optimizer, scheduler,
         "best_f1":         best_f1,
         "best_em":         best_em,
         "config":          config,
+        "history":         history or [],
     }
     torch.save(payload, os.path.join(save_dir, ckpt_name))
