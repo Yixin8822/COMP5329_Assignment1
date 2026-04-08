@@ -3,6 +3,21 @@ import torch.nn as nn
 from typing import Union, List
 
 
+class ChannelFirstLayerNorm(nn.Module):
+    """Apply LayerNorm over channels for tensors shaped [B, C, L].
+
+    This matches the common QANet convention: normalize each position
+    independently over the feature/channel dimension only.
+    """
+
+    def __init__(self, d_model: int, eps: float = 1e-5):
+        super().__init__()
+        self.ln = LayerNorm([d_model], eps=eps)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.ln(x.transpose(1, 2)).transpose(1, 2)
+
+
 class LayerNorm(nn.Module):
     """
     Custom LayerNorm implementation without using nn.LayerNorm or F.layer_norm.

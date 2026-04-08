@@ -90,22 +90,30 @@ def evaluate(
     if loss_name not in losses:
         raise ValueError(f"Unknown loss '{loss_name}'. Available: {list(losses.keys())}")
 
-    # Build a lightweight namespace so existing helpers can consume it
+    ckpt_path = os.path.join(save_dir, ckpt_name)
+    ckpt = torch.load(ckpt_path, map_location=DEVICE, weights_only=False)
+    ckpt_cfg = ckpt.get("config", {})
+
+    # Prefer the architecture saved with the checkpoint so evaluation matches training.
     args = argparse.Namespace(
         dev_npz=dev_npz,
         word_emb_json=word_emb_json,
         char_emb_json=char_emb_json,
         dev_eval_json=dev_eval_json,
-        para_limit=para_limit,
-        ques_limit=ques_limit,
-        char_limit=char_limit,
-        d_model=d_model,
-        num_heads=num_heads,
-        glove_dim=glove_dim,
-        char_dim=char_dim,
-        dropout=dropout,
-        dropout_char=dropout_char,
-        pretrained_char=pretrained_char,
+        para_limit=ckpt_cfg.get("para_limit", para_limit),
+        ques_limit=ckpt_cfg.get("ques_limit", ques_limit),
+        char_limit=ckpt_cfg.get("char_limit", char_limit),
+        d_model=ckpt_cfg.get("d_model", d_model),
+        num_heads=ckpt_cfg.get("num_heads", num_heads),
+        glove_dim=ckpt_cfg.get("glove_dim", glove_dim),
+        char_dim=ckpt_cfg.get("char_dim", char_dim),
+        dropout=ckpt_cfg.get("dropout", dropout),
+        dropout_char=ckpt_cfg.get("dropout_char", dropout_char),
+        pretrained_char=ckpt_cfg.get("pretrained_char", pretrained_char),
+        init_name=ckpt_cfg.get("init_name", "kaiming"),
+        activation=ckpt_cfg.get("activation", "relu"),
+        norm_name=ckpt_cfg.get("norm_name", "layer_norm"),
+        norm_groups=ckpt_cfg.get("norm_groups", 8),
     )
 
     word_mat, char_mat = load_word_char_mats(args)
@@ -113,9 +121,6 @@ def evaluate(
 
     dev_eval = load_dev_eval(args)
     dev_dataset = SQuADDataset(dev_npz)
-
-    ckpt_path = os.path.join(save_dir, ckpt_name)
-    ckpt = torch.load(ckpt_path, map_location=DEVICE)
     model.load_state_dict(ckpt["model_state"])
 
     metrics, ans = run_eval(

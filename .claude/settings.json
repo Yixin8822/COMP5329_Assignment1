@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(du -sh /Users/xyx/Documents/Assignment1_2026/_tmp_*)",
+      "Bash(tail -1 du -sh /Users/xyx/Documents/Assignment1_2026/_tmp_*)",
+      "Read(//Users/xyx/Documents/Assignment1_2026/**)",
+      "Read(//Users/xyx/Documents/Assignment1_2026/BEGIN{sum=0} {val=$1; unit=substr\\(val,length\\(val\\)\\); num=substr\\(val,1,length\\(val\\)-1\\); if\\(unit==\"G\"\\) sum+=num*1024; else if\\(unit==\"M\"\\) sum+=num; else if\\(unit==\"K\"\\) sum+=num/**)"
+    ],
+    "additionalDirectories": [
+      "/Users/xyx/Documents/Assignment1_2026"
+    ]
+  }
+}

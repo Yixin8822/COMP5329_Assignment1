@@ -67,13 +67,14 @@ class MultiHeadAttention(nn.Module):
         k = self.k_linear(x).view(batch_size, length, self.num_heads, self.d_k)
         v = self.v_linear(x).view(batch_size, length, self.num_heads, self.d_k)
 
-        q = q.permute(2, 0, 1, 3).contiguous().view(batch_size * self.num_heads, length, self.d_k)
-        k = k.permute(2, 0, 1, 3).contiguous().view(batch_size * self.num_heads, length, self.d_k)
-        v = v.permute(2, 0, 1, 3).contiguous().view(batch_size * self.num_heads, length, self.d_k)
+        # Keep batch-major head ordering so attention scores and masks align.
+        q = q.permute(0, 2, 1, 3).contiguous().view(batch_size * self.num_heads, length, self.d_k)
+        k = k.permute(0, 2, 1, 3).contiguous().view(batch_size * self.num_heads, length, self.d_k)
+        v = v.permute(0, 2, 1, 3).contiguous().view(batch_size * self.num_heads, length, self.d_k)
 
         if mask.dtype != torch.bool:
             mask = mask.bool()
-        attn_mask = mask.unsqueeze(1).expand(-1, length, -1).repeat(self.num_heads, 1, 1)  # [B*h, L, L]
+        attn_mask = mask.unsqueeze(1).expand(-1, length, -1).repeat_interleave(self.num_heads, dim=0)  # [B*h, L, L]
 
         attn = torch.bmm(q, k.transpose(1, 2)) * self.scale
         attn = mask_logits(attn, attn_mask)
@@ -114,20 +115,20 @@ class EncoderBlock(nn.Module):
         for i, conv in enumerate(self.convs):
             out = conv(out)
             out = self.act(out)
-            out = out + res
             if (i + 1) % 2 == 0:
                 out = self.conv_drops[i](out)
+            out = out + res
             res = out
             out = self.norms[i](out)
 
         out = self.self_att(out, mask)
-        out = out + res
         out = self.drop(out)
+        out = out + res
 
         res = out
         out = self.norme(out)
         out = self.fc(out.transpose(1, 2)).transpose(1, 2)
         out = self.act(out)
-        out = out + res
         out = self.drop(out)
+        out = out + res
         return out

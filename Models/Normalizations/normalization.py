@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from .layernorm import LayerNorm
+from .layernorm import LayerNorm, ChannelFirstLayerNorm
 from .groupnorm import GroupNorm
 
 
@@ -25,8 +25,8 @@ def get_norm(name: str, d_model: int, length: int, num_groups: int = 8) -> nn.Mo
         nn.Module instance of the requested normalization.
 
     Shapes:
-        "layer_norm" → LayerNorm([d_model, length])
-            normalizes over the last two dims of [B, d_model, length]
+        "layer_norm" → ChannelFirstLayerNorm(d_model)
+            normalizes over channels independently at each position
         "group_norm"  → GroupNorm(num_groups, d_model)
             normalizes over [C/G, *spatial] per group of [B, d_model, *]
     """
@@ -35,6 +35,6 @@ def get_norm(name: str, d_model: int, length: int, num_groups: int = 8) -> nn.Mo
             f"Unknown normalization '{name}'. Available: {list(normalizations.keys())}"
         )
     if name == "layer_norm":
-        return LayerNorm([d_model, length])
+        return ChannelFirstLayerNorm(d_model)
     else:  # group_norm
         return GroupNorm(num_groups, d_model)
