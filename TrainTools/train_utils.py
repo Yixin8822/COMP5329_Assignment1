@@ -45,7 +45,7 @@ def load_checkpoint(save_dir, ckpt_name, model, optimizer, scheduler, device):
     """
     Load model/optimizer/scheduler states from an existing checkpoint.
     Returns (start_step, best_f1, best_em, history) so training can resume.
-    Returns (0, 0.0, 0.0, []) if no checkpoint exists.
+    Returns (0, 0.0, 0.0, []) if no checkpoint does not exist.
     """
     ckpt_path = os.path.join(save_dir, ckpt_name)
     if not os.path.exists(ckpt_path):
